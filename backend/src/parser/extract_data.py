@@ -29,9 +29,6 @@ def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
                 # Parse the code
                 tree = parser.parse(source_bytes)
  
-                # Extract the components
-                extracted_components = handler.extract_components(tree, path, source_bytes)
-                
                 # Add modular component
                 module_component = FileComponent(
                     name= path.stem,
@@ -45,6 +42,9 @@ def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
                 # Map module name to its id
                 componentsMapper.map_name_to_id(path.stem, module_component.id)
 
+                # Extract the components
+                extracted_components = handler.extract_components(tree, path, source_bytes, componentsMapper)
+                
                 # Add code components
                 components.extend(extracted_components)
 
