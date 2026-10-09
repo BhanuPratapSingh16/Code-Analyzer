@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field
 from uuid import uuid4
+from pathlib import Path
 
 class Component(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     qualified_name: str
-    file_path: str
+    file_path: Path
     parent_id: str | None = None
 
 class FileComponent(Component):
@@ -22,3 +23,11 @@ class FunctionComponent(Component):
     end_line: int
     parameters: list[str] = Field(default_factory=list)
     return_type: str | None = None
+
+class ImportComponent(BaseModel):
+    source: Path
+    line: int
+    code: str
+    module_name: str
+    imported_name: str | None = None
+    alias: str | None=None

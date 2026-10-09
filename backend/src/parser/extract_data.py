@@ -13,6 +13,7 @@ LANGUAGE_MAP = {
 
 def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
     components = []
+    import_components = []
     # Read all files recursively
     for path in Path(ROOT_DIR).rglob("*"):
         if path.is_file():
@@ -31,8 +32,8 @@ def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
  
                 # Add modular component
                 module_component = FileComponent(
-                    name= path.stem,
-                    qualified_name= str(path.with_suffix("")),
+                    name= str(path.stem),
+                    qualified_name= str(path.with_suffix("")).replace("\\", "."),
                     file_path= path,
                     code= source_bytes.decode("utf-8"),
                     language= language
@@ -40,13 +41,14 @@ def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
                 components.append(module_component)
                 
                 # Map module name to its id
-                componentsMapper.map_name_to_id(path.stem, module_component.id)
+                componentsMapper.map_name_to_id(module_component.qualified_name, module_component.id)
 
                 # Extract the components
-                extracted_components = handler.extract_components(tree, path, source_bytes, componentsMapper)
+                extracted_components, extracted_imports = handler.extract_components(source_bytes, path, tree, componentsMapper)
                 
                 # Add code components
                 components.extend(extracted_components)
+                import_components.extend(extracted_imports)
 
 
-    return components
+    return components, import_components
