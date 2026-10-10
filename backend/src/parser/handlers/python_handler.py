@@ -20,6 +20,17 @@ class PythonHandler(BaseHandler):
         def text(node: Node):
             return source_bytes[node.start_byte:node.end_byte].decode("utf-8")
         
+        def add_import(node:Node, module_name:str, imported_name:str, alias_node:Node = None):
+            import_component = ImportComponent(
+                source= file_path,
+                line = node.start_point[0] + 1,
+                code = text(node),
+                module_name= module_name,
+                imported_name= imported_name,
+                alias= text(alias_node) if alias_node else None
+            )
+            components["import"].append(import_component)
+        
         def traverse(node: Node, parent_id: str=file_id, parent_name:str=file_name_with_dots):
             # Identify node type
             node_type = node.type
@@ -98,15 +109,7 @@ class PythonHandler(BaseHandler):
                                 module_name = imported_name
                                 imported_name = None
                             
-                            import_component = ImportComponent(
-                                source= file_path,
-                                line = node.start_point[0] + 1,
-                                code = text(node),
-                                module_name= module_name,
-                                imported_name= imported_name,
-                                alias= text(alias_node) if alias_node else None
-                            )
-                            components["import"].append(import_component)
+                            add_import(node, module_name, imported_name, alias_node)
                     
                     elif child.type == "dotted_name":
                         name = text(child)
@@ -114,48 +117,28 @@ class PythonHandler(BaseHandler):
                         if not dot:
                             module_name = imported_name
                             imported_name = None
-                        
-                        import_component = ImportComponent(
-                            source = file_path,
-                            line = node.start_point[0] + 1,
-                            code = text(node),
-                            module_name= module_name,
-                            imported_name= imported_name
-                        )
-                        components["import"].append(import_component)
+
+                        add_import(node, module_name, imported_name)                        
 
             elif node_type == "import_from_statement":
                 children = node.named_children
                 
                 if children:
+                    # First child is module
                     module_node = children[0]
                     module_name = text(module_node)
                     
+                    # Others are submodules 
                     for child in children[1:]:
                         if child.type == "aliased_import":
                             name_node = child.child_by_field_name("name")
                             alias_node = child.child_by_field_name("alias")
                             
                             if name_node:
-                                import_component = ImportComponent(
-                                    source= file_path,
-                                    line = node.start_point[0] + 1,
-                                    code = text(node),
-                                    module_name= f"{module_name}",
-                                    imported_name= text(name_node),
-                                    alias= text(alias_node) if alias_node else None
-                                )
-                                components["import"].append(import_component)
+                                add_import(node, module_name, text(name_node), alias_node)
                         
                         elif child.type == "dotted_name":
-                            import_component = ImportComponent(
-                                source= file_path,
-                                line= node.start_point[0] + 1,
-                                code= text(node),
-                                module_name= f"{module_name}",
-                                imported_name= text(child)
-                            )
-                            components["import"].append(import_component)
+                            add_import(node, module_name, text(child))
             
             elif node_type == "call":
                 # Called function node
