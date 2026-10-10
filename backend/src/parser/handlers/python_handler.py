@@ -1,6 +1,6 @@
 from pathlib import Path
 from tree_sitter import Tree, Node
-from src.components.code_components import Component, ClassComponent, FunctionComponent, ImportComponent, CallComponent
+from src.components.code_components import Component, ClassComponent, FunctionComponent, ImportComponent, CallComponent, VariableComponent
 from src.parser.handlers.base_handler import BaseHandler
 from src.relation.mapper import ComponentsMapper
 
@@ -12,6 +12,7 @@ class PythonHandler(BaseHandler):
         components["function"] = []
         components["import"] = []
         components["call"] = []
+        components["variable"] = []
         
         file_name = str(Path(file_path).with_suffix(""))
         file_name_with_dots = file_name.replace("\\", ".")
@@ -31,6 +32,36 @@ class PythonHandler(BaseHandler):
             )
             components["import"].append(import_component)
         
+        
+        # Function to identify global variables components
+        def extract_variables(root=tree.root_node, parent_id:str=file_id, parent_name:str=file_name_with_dots):
+            variables = []
+            
+            for node in root.named_children:
+                if node.type not in ("assignment", "annotated_assignment"):
+                    continue
+                
+                # Variable node
+                target = node.child_by_field_name("left")
+                
+                if target is None or target.type != "identifier":
+                    continue
+
+                name = text(target)
+                type_node = node.child_by_field_name("type")
+                
+                variable_component = VariableComponent(
+                    name=name,
+                    qualified_name=f"{parent_name}.{name}",
+                    file_path=str(file_path),
+                    parent_id= parent_id,
+                    code=text(node),
+                    line=node.start_point[0] + 1,
+                    type_annotation=text(type_node) if type_node else None,
+                )
+                components["variable"].append(variable_component)
+        
+        # Recursive functions to identify various components
         def traverse(node: Node, parent_id: str=file_id, parent_name:str=file_name_with_dots):
             # Identify node type
             node_type = node.type
@@ -157,5 +188,7 @@ class PythonHandler(BaseHandler):
                 
             for child in node.named_children:
                 traverse(child, parent_id, parent_name)
-        traverse(tree.root_node)            
+                
+        traverse(tree.root_node)
+        extract_variables()
         return components

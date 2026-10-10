@@ -18,6 +18,7 @@ def parse_code(ROOT_DIR:str, componentsMapper: ComponentsMapper):
     components["function"] = []
     components["import"] = []
     components["call"] = []
+    components["variable"] = []
 
     # Read all files recursively
     for path in Path(ROOT_DIR).rglob("*"):

@@ -41,3 +41,8 @@ class CallComponent(BaseModel):
     caller_name: str
     call_name: str
     code: str
+    
+class VariableComponent(Component):
+    code: str
+    line: int
+    type_annotation: str | None = None
