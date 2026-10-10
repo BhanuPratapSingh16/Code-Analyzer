@@ -25,9 +25,19 @@ class FunctionComponent(Component):
     return_type: str | None = None
 
 class ImportComponent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
     source: Path
     line: int
     code: str
     module_name: str
     imported_name: str | None = None
     alias: str | None=None
+    
+class CallComponent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    source: Path
+    line: int
+    caller_id: str
+    caller_name: str
+    call_name: str
+    code: str

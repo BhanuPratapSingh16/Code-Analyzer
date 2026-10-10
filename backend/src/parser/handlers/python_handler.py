@@ -1,16 +1,21 @@
 from pathlib import Path
 from tree_sitter import Tree, Node
-from src.components.code_components import Component, ClassComponent, FunctionComponent, ImportComponent
+from src.components.code_components import Component, ClassComponent, FunctionComponent, ImportComponent, CallComponent
 from src.parser.handlers.base_handler import BaseHandler
 from src.relation.mapper import ComponentsMapper
 
 class PythonHandler(BaseHandler):
-    def extract_components(self, source_bytes:bytes, file_path:Path, tree:Tree, componentsMapper:ComponentsMapper) -> list[Component]:
-        components = []
-        imported_components = []
+    def extract_components(self, source_bytes:bytes, file_path:Path, tree:Tree, components_mapper:ComponentsMapper) -> list[Component]:
+        components = {}
+        components["file"] = []
+        components["class"] = []
+        components["function"] = []
+        components["import"] = []
+        components["call"] = []
+        
         file_name = str(Path(file_path).with_suffix(""))
         file_name_with_dots = file_name.replace("\\", ".")
-        file_id = componentsMapper.get_id_by_name(file_name_with_dots)
+        file_id = components_mapper.get_id_by_name(file_name_with_dots)
         
         def text(node: Node):
             return source_bytes[node.start_byte:node.end_byte].decode("utf-8")
@@ -35,14 +40,14 @@ class PythonHandler(BaseHandler):
                         start_line= node.start_point[0] + 1,
                         end_line= node.end_point[0] + 1
                     )
-                    components.append(class_component)
+                    components["class"].append(class_component)
                     
                     # Update parent id and parent name
                     parent_id = class_component.id
                     parent_name = class_component.qualified_name
-                    componentsMapper.map_name_to_id(parent_name, parent_id)
+                    components_mapper.map_name_to_id(parent_name, parent_id)
             
-            elif node.type == "function_definition":
+            elif node_type == "function_definition":
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     # Extract function name and create qualified name
@@ -73,12 +78,12 @@ class PythonHandler(BaseHandler):
                         parameters= parameters,
                         return_type= return_type
                     )
-                    components.append(function_component)
+                    components["function"].append(function_component)
                     
                     # Update parent id and parent name
                     parent_id = function_component.id
                     parent_name = function_component.qualified_name
-                    componentsMapper.map_name_to_id(parent_name, parent_id)
+                    components_mapper.map_name_to_id(parent_name, parent_id)
             
             elif node_type == "import_statement":
                 for child in node.named_children:
@@ -101,7 +106,7 @@ class PythonHandler(BaseHandler):
                                 imported_name= imported_name,
                                 alias= text(alias_node) if alias_node else None
                             )
-                            imported_components.append(import_component)
+                            components["import"].append(import_component)
                     
                     elif child.type == "dotted_name":
                         name = text(child)
@@ -117,8 +122,8 @@ class PythonHandler(BaseHandler):
                             module_name= module_name,
                             imported_name= imported_name
                         )
-                        imported_components.append(import_component)
-             
+                        components["import"].append(import_component)
+
             elif node_type == "import_from_statement":
                 children = node.named_children
                 
@@ -140,7 +145,7 @@ class PythonHandler(BaseHandler):
                                     imported_name= text(name_node),
                                     alias= text(alias_node) if alias_node else None
                                 )
-                                imported_components.append(import_component)
+                                components["import"].append(import_component)
                         
                         elif child.type == "dotted_name":
                             import_component = ImportComponent(
@@ -150,9 +155,24 @@ class PythonHandler(BaseHandler):
                                 module_name= f"{module_name}",
                                 imported_name= text(child)
                             )
-                            imported_components.append(import_component)
+                            components["import"].append(import_component)
             
+            elif node_type == "call":
+                # Called function node
+                function_node = node.child_by_field_name("function")
+                
+                if function_node:
+                    call_component = CallComponent(
+                        source= file_path,
+                        line= node.start_point[0] + 1,
+                        caller_id= parent_id,
+                        caller_name= parent_name,
+                        call_name= text(function_node),
+                        code= text(node)
+                    )
+                    components["call"].append(call_component)
+                
             for child in node.named_children:
                 traverse(child, parent_id, parent_name)
         traverse(tree.root_node)            
-        return components, imported_components
+        return components
