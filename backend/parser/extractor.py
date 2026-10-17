@@ -24,7 +24,28 @@ class Extractor:
     def __gettext(self, node:Node):
         return node.text.decode("utf-8")
     
-    def __getid(self, node:Node, name:str, file_name:str):
+    def __is_function_node(self, node:Node, language:str):
+        function_types = {
+            "python": ["function_definition"],
+            "javascript": ["function_declaration", "arrow_function"],
+            "typescript": ["function_declaration", "arrow_function"],
+            "java": ["method_declaration"],
+            "cpp": ["function_definition"],
+            "c": ["function_definition"],
+        }
+        return node.type in function_types.get(language, [])
+        
+    def __is_class_node(self, node:Node, language:str):
+        class_types = {
+            "python": ["class_definition"],
+            "javascript": ["class_declaration"],
+            "typescript": ["class_declaration"],
+            "java": ["class_declaration"],
+            "cpp": ["class_specifier"],
+        }
+        return node.type in class_types.get(language, [])        
+    
+    def __getid(self, node:Node, name:str, file_name:str, language:str):
         current_node = node
         current_name = name
         
@@ -34,7 +55,7 @@ class Extractor:
             if not parent:
                 break
             
-            if parent.type in ("class_definition", "function_definition"):
+            if self.__is_function_node(node, language) and self.__is_class_node(node, language):
                 name_node = parent.child_by_field_name("name")
             
                 parent_name = self.__gettext(name_node)
@@ -82,7 +103,7 @@ class Extractor:
             return_type = return_node.text.decode("utf-8") if return_node else None
             
             # Construct id
-            id = self.__getid(func_node, func_name, file_name)
+            id = self.__getid(func_node, func_name, file_name, language)
             
             # Create component
             function_component = FunctionComponent(
@@ -121,7 +142,7 @@ class Extractor:
             class_name = self.__gettext(name_node)
             
             # Construct id
-            id = self.__getid(class_node, class_name, file_name)
+            id = self.__getid(class_node, class_name, file_name, language)
             
             # Create component
             class_component = ClassComponent(
