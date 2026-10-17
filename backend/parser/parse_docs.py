@@ -1,13 +1,14 @@
 from pathlib import Path
-from tree_sitter_language_pack import get_parser
-from parser.extractor import extract_components
+from tree_sitter_language_pack import get_parser, get_language
+from parser.extractor import Extractor
 
 
 class Parser:
     def __init__(self, root:Path):
         self.root = root
         self.EXT_MAPPER = {
-            ".py": "python"
+            ".py": "python",
+            ".java": "java"
         }
         self.components = {
             "class": [],
@@ -16,6 +17,15 @@ class Parser:
             "import": [],
             "call": []
         }
+        
+        self.languages = {}
+        self.parsers = {}
+        
+        for _, language in self.EXT_MAPPER.items():
+            self.languages[language] = get_language(language)
+            self.parsers[language] = get_parser(language)
+        
+        self.extractor = Extractor()
         
     def parse(self):
         # Parse all the files recursively
@@ -30,7 +40,8 @@ class Parser:
             
             # Extract language and get corresponding parser
             language = self.EXT_MAPPER[extension]
-            parser = get_parser(language)
+            lang = self.languages[language]
+            parser = self.parsers[language]
             
             # Read the contents of file
             source_code = path.read_bytes()
@@ -38,7 +49,8 @@ class Parser:
             # Get AST
             tree = parser.parse(source_code)
             
-            components = extract_components(tree, source_code, path)
+            # Extract function components
+            function_comps = self.extractor.extract_functions(tree, lang, source_code, language, path)
+            self.components["function"].extend(function_comps)
             
-            for key, value in components.items():
-                self.components[key].extend(value)
+            

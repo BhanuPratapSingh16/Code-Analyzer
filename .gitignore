@@ -3,3 +3,8 @@
 
 # Virtual Environment
 venv/
+
+main.py
+data/
+
+__pycache__
