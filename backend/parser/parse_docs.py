@@ -50,7 +50,9 @@ class Parser:
             tree = parser.parse(source_code)
             
             # Extract function components
-            function_comps = self.extractor.extract_functions(tree, lang, source_code, language, path)
+            function_comps = self.extractor.extract_functions(tree, lang, language, path)
             self.components["function"].extend(function_comps)
             
+            class_comps = self.extractor.extract_classes(tree, lang, language, path)
+            self.components["class"].extend(class_comps)
             
