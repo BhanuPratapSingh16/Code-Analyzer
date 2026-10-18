@@ -63,7 +63,7 @@ class Parser:
             self.components["call"].extend(call_comps)
             
             module_comp = ModuleComponent(
-                path= path,
-                name= str(path.with_suffix("")).replace("\\", ".")
+                id= str(path.with_suffix("")).replace("\\", "."),
+                path= path
             )
             self.components["module"].append(module_comp)

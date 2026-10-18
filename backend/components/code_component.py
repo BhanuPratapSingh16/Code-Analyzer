@@ -6,6 +6,7 @@ class Component(BaseModel):
     id: str
     code: str
     file: Path
+    parent_id: str
 
 class ClassComponent(Component):
     start_line: int
@@ -18,8 +19,8 @@ class FunctionComponent(Component):
     end_line: int
     
 class ModuleComponent(BaseModel):
+    id: str
     path: Path
-    name: str
     
 class ImportComponent(BaseModel):
     file: Path

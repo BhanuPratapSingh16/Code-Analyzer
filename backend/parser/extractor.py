@@ -82,7 +82,22 @@ class Extractor:
         start_col = node.start_point[1] + 1
         
         return f"{parent_name}:{name}:{start_row}:{start_col}"
-                    
+    
+    def __get_parent_id(self, node:Node, file_name:str, language:str):
+        while True:
+            if node.type in ("module", "function_definition", "class_definition"):
+                break
+            node = node.parent
+            
+        if node.type == "module":
+            return file_name
+        
+        name_node = node.child_by_field_name("name")
+        if not name_node:
+            return None
+        node_name = self.__gettext(name_node)
+        id = self.__getid(node, node_name, file_name, language)
+        return id
     
     def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path):
         function_comps = []
@@ -119,13 +134,15 @@ class Extractor:
             
             # Construct id
             id = self.__getid(func_node, func_name, file_name, language)
-            
+            parent_id = self.__get_parent_id(func_node.parent, file_name, language)
+
             # Create component
             function_component = FunctionComponent(
                 name= func_name,
                 id= id,
                 code= self.__gettext(func_node),
                 file= path,
+                parent_id= parent_id,
                 parameters= parameters,
                 return_type= return_type,
                 start_line= func_node.start_point[0] + 1,
@@ -158,11 +175,13 @@ class Extractor:
             
             # Construct id
             id = self.__getid(class_node, class_name, file_name, language)
+            parent_id = self.__get_parent_id(class_node.parent, file_name, language)
             
             # Create component
             class_component = ClassComponent(
                 name= class_name,
                 id= id,
+                parent_id= parent_id,
                 code= self.__gettext(class_node),
                 file= path,
                 start_line= class_node.start_point[0] + 1,
