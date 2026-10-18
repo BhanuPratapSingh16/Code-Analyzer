@@ -62,7 +62,3 @@ class Parser:
             call_comps = self.extractor.extract_calls(tree, lang, language, path)
             self.components["call"].extend(call_comps)
             
-            print(self.components["function"])
-            print(self.components["class"])
-            print(self.components["import"])
-            print(self.components["call"])
