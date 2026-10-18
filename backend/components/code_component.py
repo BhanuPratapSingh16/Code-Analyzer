@@ -16,3 +16,9 @@ class FunctionComponent(Component):
     return_type: str | None = None
     start_line: int
     end_line: int
+    
+class ImportComponent(BaseModel):
+    file: Path
+    file_name: str
+    module_name: str
+    alias: str | None = None

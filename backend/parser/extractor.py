@@ -1,6 +1,6 @@
 from pathlib import Path
 from tree_sitter import Tree, Node, Query, QueryCursor, Language
-from components.code_component import ClassComponent, FunctionComponent
+from components.code_component import ClassComponent, FunctionComponent, ImportComponent
 
 class Extractor:
     def __init__(self):
@@ -19,6 +19,15 @@ class Extractor:
             "typescript": "(class_declaration name: (identifier) @class_name) @class",
             "java": "(class_declaration name: (identifier) @class_name) @class",
             "cpp": "(class_specifier name: (type_identifier) @class_name) @class",
+        }
+        
+        self.import_queries = {
+            "python": ["(import_statement) @import", "(import_from_statement) @import"],
+            "javascript": ["(import_statement) @import"],
+            "typescript": ["(import_statement) @import"],
+            "java": ["(import_declaration) @import"],
+            "c": ["(preproc_include) @import"],
+            "cpp": ["(preproc_include) @import"]
         }
     
     def __gettext(self, node:Node):
@@ -156,4 +165,60 @@ class Extractor:
             class_comps.append(class_component)
         
         return class_comps
+    
+    def extract_imports(self, tree:Tree, lang:Language, language:str, path:Path):
+        import_comps = []
+        
+        file_name = str(path.with_suffix("")).replace("\\", ".")
+        
+        # Execute against all queries of a languages
+        query_strings = self.import_queries[language]
+        
+        for query_string in query_strings:
+            query = Query(lang, query_string)
+            cursor = QueryCursor(query)
+            matches = cursor.matches(tree.root_node)
             
+            for _, capture_dict in matches:
+                import_node = capture_dict["import"][0]
+                
+                if import_node.type == "import_statement":
+                    module_node = import_node.child_by_field_name("name")
+                    if module_node.type == "dotted_name":
+                        module_name = self.__gettext(module_node)
+                        alias = None
+                    
+                    elif module_node.type == "aliased_import":
+                        module_name = self.__gettext(module_node.child_by_field_name("name"))
+                        alias = self.__gettext(module_node.child_by_field_name("alias"))
+                        
+                    import_component = ImportComponent(
+                        file= path,
+                        file_name= file_name,
+                        module_name= module_name,
+                        alias= alias
+                    )
+                    import_comps.append(import_component)
+                
+                elif import_node.type == "import_from_statement":
+                    module_node = import_node.child_by_field_name("module_name")
+                    module_name = self.__gettext(module_node)
+                    
+                    imported_node = import_node.child_by_field_name("name")
+                    if imported_node.type == "dotted_name":
+                        imported_name = self.__gettext(imported_node)
+                        alias = None
+                    
+                    elif imported_node.type == "aliased_import":
+                        imported_name = self.__gettext(imported_node.child_by_field_name("name"))
+                        alias = self.__gettext(imported_node.child_by_field_name("alias"))
+                    
+                    import_component = ImportComponent(
+                        file= path,
+                        file_name= file_name,
+                        module_name= f"{module_name}.{imported_name}",
+                        alias= alias
+                    )
+                    import_comps.append(import_component)
+        
+        return import_comps

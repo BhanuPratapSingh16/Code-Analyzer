@@ -56,3 +56,6 @@ class Parser:
             class_comps = self.extractor.extract_classes(tree, lang, language, path)
             self.components["class"].extend(class_comps)
             
+            import_comps = self.extractor.extract_imports(tree, lang, language, path)
+            self.components["import"].extend(import_comps)
+            
