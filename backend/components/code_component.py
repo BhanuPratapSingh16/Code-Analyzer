@@ -17,6 +17,10 @@ class FunctionComponent(Component):
     start_line: int
     end_line: int
     
+class ModuleComponent(BaseModel):
+    path: Path
+    name: str
+    
 class ImportComponent(BaseModel):
     file: Path
     file_name: str

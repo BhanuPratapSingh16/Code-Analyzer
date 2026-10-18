@@ -1,7 +1,7 @@
 from pathlib import Path
 from tree_sitter_language_pack import get_parser, get_language
 from parser.extractor import Extractor
-
+from components.code_component import ModuleComponent
 
 class Parser:
     def __init__(self, root:Path):
@@ -13,7 +13,7 @@ class Parser:
         self.components = {
             "class": [],
             "function": [],
-            "variable": [],
+            "module": [],
             "import": [],
             "call": []
         }
@@ -49,7 +49,7 @@ class Parser:
             # Get AST
             tree = parser.parse(source_code)
             
-            # Extract function components
+            # Extract various components
             function_comps = self.extractor.extract_functions(tree, lang, language, path)
             self.components["function"].extend(function_comps)
             
@@ -62,3 +62,8 @@ class Parser:
             call_comps = self.extractor.extract_calls(tree, lang, language, path)
             self.components["call"].extend(call_comps)
             
+            module_comp = ModuleComponent(
+                path= path,
+                name= str(path.with_suffix("")).replace("\\", ".")
+            )
+            self.components["module"].append(module_comp)
