@@ -1,6 +1,6 @@
 from pathlib import Path
 from tree_sitter import Tree, Node, Query, QueryCursor, Language
-from components.code_component import ClassComponent, FunctionComponent, ImportComponent
+from components.code_component import ClassComponent, FunctionComponent, ImportComponent, CallComponent
 
 class Extractor:
     def __init__(self):
@@ -29,7 +29,11 @@ class Extractor:
             "c": ["(preproc_include) @import"],
             "cpp": ["(preproc_include) @import"]
         }
-    
+
+        self.call_queries = {
+            "python": ["(call function: (identifier) @callee) @call", "(call function: (attribute object: (_) @receiver attribute: (identifier) @method)) @call"]
+        }
+        
     def __gettext(self, node:Node):
         return node.text.decode("utf-8")
     
@@ -54,28 +58,30 @@ class Extractor:
         }
         return node.type in class_types.get(language, [])        
     
-    def __getid(self, node:Node, name:str, file_name:str, language:str):
+    def __get_parent_name(self, node:Node, file_name:str, language:str):
         current_node = node
-        current_name = name
-        
+        current_name = None
         while True:
             parent = current_node.parent
-            
             if not parent:
                 break
             
-            if self.__is_function_node(node, language) and self.__is_class_node(node, language):
+            if self.__is_function_node(parent, language) or self.__is_class_node(parent, language):
                 name_node = parent.child_by_field_name("name")
-            
                 parent_name = self.__gettext(name_node)
-                current_name = f"{parent_name}:{current_name}"
+                current_name = f"{parent_name}:{current_name}" if current_name else parent_name
             
             current_node = parent
+        
+        return f"{file_name}:{current_name}" if current_name else file_name
+    
+    def __getid(self, node:Node, name:str, file_name:str, language:str):
+        parent_name = self.__get_parent_name(node, file_name, language)
             
         start_row = node.start_point[0] + 1
         start_col = node.start_point[1] + 1
         
-        return f"{file_name}:{current_name}:{start_row}:{start_col}"
+        return f"{parent_name}:{name}:{start_row}:{start_col}"
                     
     
     def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path):
@@ -222,3 +228,47 @@ class Extractor:
                     import_comps.append(import_component)
         
         return import_comps
+    
+    def extract_calls(self, tree:Tree, lang:Language, language:str, path:Path):
+        call_comps = []
+        
+        file_name = str(path.with_suffix("")).replace("\\", ".")
+        
+        query_strings = self.call_queries.get(language)
+        
+        for query_string in query_strings:
+            query = Query(lang, query_string)
+            cursor = QueryCursor(query)
+            matches = cursor.matches(tree.root_node)
+            
+            for _, capture_dict in matches:
+                call_node = capture_dict["call"][0]
+                # Plain calls
+                callee_node = capture_dict.get("callee")
+                if callee_node:
+                    callee_node = callee_node[0]
+                    call_type = "PLAIN"
+                
+                # Attribute calls
+                receiver_node = capture_dict.get("receiver")
+                method_node = capture_dict.get("method")
+                
+                if receiver_node and method_node:
+                    receiver_node = receiver_node[0]
+                    method_node = method_node[0]
+                    call_type = "ATTRIBUTE"
+                
+                # Get caller name
+                caller_name = self.__get_parent_name(call_node, file_name, language)
+                
+                call_component = CallComponent(
+                    call_text= self.__gettext(call_node),
+                    callee_name= self.__gettext(callee_node) if callee_node else None,
+                    caller_name= caller_name,
+                    receiver_name= self.__gettext(receiver_node) if receiver_node else None,
+                    method_name= self.__gettext(method_node) if method_node else None,
+                    call_type= call_type
+                )
+                call_comps.append(call_component)
+        
+        return call_comps
