@@ -25,9 +25,9 @@ class Parser:
             self.languages[language] = get_language(language)
             self.parsers[language] = get_parser(language)
         
-        self.extractor = Extractor()
+        self.extractor = Extractor(root)
         
-    def parse(self):
+    def parse(self, symbol_index):
         # Parse all the files recursively
         for path in self.root.rglob("*"):
             if not path.is_file():
@@ -50,10 +50,10 @@ class Parser:
             tree = parser.parse(source_code)
             
             # Extract various components
-            function_comps = self.extractor.extract_functions(tree, lang, language, path)
+            function_comps = self.extractor.extract_functions(tree, lang, language, path, symbol_index)
             self.components["function"].extend(function_comps)
             
-            class_comps = self.extractor.extract_classes(tree, lang, language, path)
+            class_comps = self.extractor.extract_classes(tree, lang, language, path, symbol_index)
             self.components["class"].extend(class_comps)
             
             import_comps = self.extractor.extract_imports(tree, lang, language, path)
@@ -63,7 +63,7 @@ class Parser:
             self.components["call"].extend(call_comps)
             
             module_comp = ModuleComponent(
-                id= str(path.with_suffix("")).replace("\\", "."),
+                id= str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+"."),
                 path= path
             )
             self.components["module"].append(module_comp)

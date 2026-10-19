@@ -25,7 +25,8 @@ class ModuleComponent(BaseModel):
 class ImportComponent(BaseModel):
     file: Path
     file_name: str
-    module_name: str
+    import_target: str
+    imported_component: str | None = None
     alias: str | None = None
     
 class CallComponent(BaseModel):

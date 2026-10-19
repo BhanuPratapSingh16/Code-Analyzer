@@ -1,5 +1,6 @@
-from relation.relation_components import ContainsRelation
+from relation.relation_components import ContainsRelation, ImportRelation
 from itertools import chain
+from utils.symbol_index import SymbolIndex
 
 class RelationExtractor:
     def __init__(self, components):
@@ -20,3 +21,45 @@ class RelationExtractor:
             contains.append(contains_relation)
         
         return contains
+    
+    def extract_imports(self, symbol_index:SymbolIndex):
+        imports = []
+        module_components = self.components["module"]
+        for component in self.components["import"]:
+            source = component.file_name
+            import_target = component.import_target
+            imported_component = component.imported_component
+            
+            # import statement
+            if not imported_component:
+                for component in module_components:
+                    if component.id == import_target:
+                        import_relation = ImportRelation(
+                            importer_id= source,
+                            importee_id= import_target
+                        )
+                        imports.append(import_relation)
+            # import from statement
+            else:
+                # If class/function imported
+                imported_component_qfn = f"{import_target}:{imported_component}"
+                ids = symbol_index.getIndices(imported_component_qfn)
+                if ids:
+                    for id in ids:
+                        import_relation = ImportRelation(
+                            importer_id= source,
+                            importee_id= id
+                        )
+                        imports.append(import_relation)
+                # If submodule imported
+                else:
+                    imported_component_qfn = f"{import_target}.{imported_component}"
+                    for component in module_components:
+                        if component.id == imported_component_qfn:
+                            import_relation = ImportRelation(
+                                importer_id= source,
+                                importee_id= imported_component_qfn
+                            )
+                            imports.append(import_relation)
+                            break
+        return imports

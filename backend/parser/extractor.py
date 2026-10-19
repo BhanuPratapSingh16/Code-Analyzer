@@ -1,9 +1,11 @@
 from pathlib import Path
 from tree_sitter import Tree, Node, Query, QueryCursor, Language
 from components.code_component import ClassComponent, FunctionComponent, ImportComponent, CallComponent
+from utils.symbol_index import SymbolIndex
 
 class Extractor:
-    def __init__(self):
+    def __init__(self, root:Path):
+        self.root = root
         self.function_queries = {
             "python": "(function_definition name: (identifier) @func_name parameters: (parameters) @params) @func",
             "javascript": "(function_declaration name: (identifier) @func_name) @func",
@@ -23,11 +25,6 @@ class Extractor:
         
         self.import_queries = {
             "python": ["(import_statement) @import", "(import_from_statement) @import"],
-            "javascript": ["(import_statement) @import"],
-            "typescript": ["(import_statement) @import"],
-            "java": ["(import_declaration) @import"],
-            "c": ["(preproc_include) @import"],
-            "cpp": ["(preproc_include) @import"]
         }
 
         self.call_queries = {
@@ -75,15 +72,22 @@ class Extractor:
         
         return f"{file_name}:{current_name}" if current_name else file_name
     
-    def __getid(self, node:Node, name:str, file_name:str, language:str):
+    def __getid(self, node:Node, name:str, file_name:str, language:str, symbol_index:SymbolIndex, isParent:bool = False):
         parent_name = self.__get_parent_name(node, file_name, language)
             
         start_row = node.start_point[0] + 1
         start_col = node.start_point[1] + 1
         
-        return f"{parent_name}:{name}:{start_row}:{start_col}"
+        qualified_name = f"{parent_name}:{name}"
+        id = f"{qualified_name}:{start_row}:{start_col}"
+        
+        # Register qualified name
+        if not isParent:
+            symbol_index.setIndex(qualified_name, id)
+
+        return id
     
-    def __get_parent_id(self, node:Node, file_name:str, language:str):
+    def __get_parent_id(self, node:Node, file_name:str, language:str, symbol_index:SymbolIndex):
         while True:
             if node.type in ("module", "function_definition", "class_definition"):
                 break
@@ -96,13 +100,13 @@ class Extractor:
         if not name_node:
             return None
         node_name = self.__gettext(name_node)
-        id = self.__getid(node, node_name, file_name, language)
+        id = self.__getid(node, node_name, file_name, language, symbol_index, isParent=True)
         return id
     
-    def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path):
+    def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex):
         function_comps = []
         
-        file_name = str(path.with_suffix("")).replace("\\", ".")
+        file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
         
         # Execute query and get functions
         query_string = self.function_queries[language]
@@ -133,8 +137,8 @@ class Extractor:
             return_type = return_node.text.decode("utf-8") if return_node else None
             
             # Construct id
-            id = self.__getid(func_node, func_name, file_name, language)
-            parent_id = self.__get_parent_id(func_node.parent, file_name, language)
+            id = self.__getid(func_node, func_name, file_name, language, symbol_index)
+            parent_id = self.__get_parent_id(func_node.parent, file_name, language, symbol_index)
 
             # Create component
             function_component = FunctionComponent(
@@ -152,10 +156,10 @@ class Extractor:
         
         return function_comps
     
-    def extract_classes(self, tree:Tree, lang:Language, language:str, path:Path):
+    def extract_classes(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex):
         class_comps = []
         
-        file_name = str(path.with_suffix("")).replace("\\", ".")
+        file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
         
         # Execute query and get classes
         query_string = self.class_queries[language]
@@ -174,8 +178,8 @@ class Extractor:
             class_name = self.__gettext(name_node)
             
             # Construct id
-            id = self.__getid(class_node, class_name, file_name, language)
-            parent_id = self.__get_parent_id(class_node.parent, file_name, language)
+            id = self.__getid(class_node, class_name, file_name, language, symbol_index)
+            parent_id = self.__get_parent_id(class_node.parent, file_name, language, symbol_index)
             
             # Create component
             class_component = ClassComponent(
@@ -194,7 +198,7 @@ class Extractor:
     def extract_imports(self, tree:Tree, lang:Language, language:str, path:Path):
         import_comps = []
         
-        file_name = str(path.with_suffix("")).replace("\\", ".")
+        file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
         
         # Execute against all queries of a languages
         query_strings = self.import_queries[language]
@@ -206,52 +210,55 @@ class Extractor:
             
             for _, capture_dict in matches:
                 import_node = capture_dict["import"][0]
-                
-                if import_node.type == "import_statement":
-                    module_node = import_node.child_by_field_name("name")
-                    if module_node.type == "dotted_name":
-                        module_name = self.__gettext(module_node)
-                        alias = None
-                    
-                    elif module_node.type == "aliased_import":
-                        module_name = self.__gettext(module_node.child_by_field_name("name"))
-                        alias = self.__gettext(module_node.child_by_field_name("alias"))
+                if language == "python":
+                    if import_node.type == "import_statement":
+                        import_target_node = import_node.child_by_field_name("name")
                         
-                    import_component = ImportComponent(
-                        file= path,
-                        file_name= file_name,
-                        module_name= module_name,
-                        alias= alias
-                    )
-                    import_comps.append(import_component)
-                
-                elif import_node.type == "import_from_statement":
-                    module_node = import_node.child_by_field_name("module_name")
-                    module_name = self.__gettext(module_node)
+                        if import_target_node.type == "dotted_name":
+                            import_target = self.__gettext(import_target_node)
+                            alias = None
+                        
+                        elif import_target_node.type == "aliased_import":
+                            import_target = self.__gettext(import_target_node.child_by_field_name("name"))
+                            alias = self.__gettext(import_target_node.child_by_field_name("alias"))
+                            
+                        import_component = ImportComponent(
+                            file= path,
+                            file_name= file_name,
+                            import_target= import_target,
+                            imported_component= None,
+                            alias= alias
+                        )
+                        import_comps.append(import_component)
                     
-                    imported_node = import_node.child_by_field_name("name")
-                    if imported_node.type == "dotted_name":
-                        imported_name = self.__gettext(imported_node)
-                        alias = None
-                    
-                    elif imported_node.type == "aliased_import":
-                        imported_name = self.__gettext(imported_node.child_by_field_name("name"))
-                        alias = self.__gettext(imported_node.child_by_field_name("alias"))
-                    
-                    import_component = ImportComponent(
-                        file= path,
-                        file_name= file_name,
-                        module_name= f"{module_name}.{imported_name}",
-                        alias= alias
-                    )
-                    import_comps.append(import_component)
+                    elif import_node.type == "import_from_statement":
+                        import_target_node = import_node.child_by_field_name("module_name")
+                        import_target = self.__gettext(import_target_node)
+                        
+                        imported_node = import_node.child_by_field_name("name")
+                        if imported_node.type == "dotted_name":
+                            imported_name = self.__gettext(imported_node)
+                            alias = None
+                        
+                        elif imported_node.type == "aliased_import":
+                            imported_name = self.__gettext(imported_node.child_by_field_name("name"))
+                            alias = self.__gettext(imported_node.child_by_field_name("alias"))
+                        
+                        import_component = ImportComponent(
+                            file= path,
+                            file_name= file_name,
+                            import_target= import_target,
+                            imported_component= imported_name,
+                            alias= alias
+                        )
+                        import_comps.append(import_component)
         
         return import_comps
     
     def extract_calls(self, tree:Tree, lang:Language, language:str, path:Path):
         call_comps = []
         
-        file_name = str(path.with_suffix("")).replace("\\", ".")
+        file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
         
         query_strings = self.call_queries.get(language)
         
