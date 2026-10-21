@@ -2,6 +2,7 @@ from relation.relation_components import ContainsRelation, ImportRelation, CallR
 from itertools import chain
 from utils.symbol_index import SymbolIndex
 from utils.parents_mapper import ParentMapper
+from utils.imports_mapper import ImportMapper
 
 class RelationExtractor:
     def __init__(self, components):
@@ -23,23 +24,26 @@ class RelationExtractor:
         
         return contains
     
-    def extract_imports(self, symbol_index:SymbolIndex):
+    def extract_imports(self, symbol_index:SymbolIndex, import_mapper:ImportMapper):
         imports = []
         module_components = self.components["module"]
         for component in self.components["import"]:
             source = component.file_name
             import_target = component.import_target
             imported_component = component.imported_component
+            alias = component.alias
             
-            # import statement
+            # import statement -> Module imported
             if not imported_component:
-                for component in module_components:
-                    if component.id == import_target:
+                for module_component in module_components:
+                    if module_component.id == import_target:
+                        local_name = alias if alias else import_target
                         import_relation = ImportRelation(
                             importer_id= source,
-                            importee_id= import_target
+                            importee_id= import_target,
                         )
                         imports.append(import_relation)
+                        import_mapper.put(source, local_name, import_target)
             # import from statement
             else:
                 # If class/function imported
@@ -47,21 +51,25 @@ class RelationExtractor:
                 ids = symbol_index.getIndices(imported_component_qfn)
                 if ids:
                     for id in ids:
+                        local_name = alias if alias else imported_component
                         import_relation = ImportRelation(
                             importer_id= source,
-                            importee_id= id
+                            importee_id= id,
                         )
                         imports.append(import_relation)
+                        import_mapper.put(source, local_name, id)
                 # If submodule imported
                 else:
                     imported_component_qfn = f"{import_target}.{imported_component}"
-                    for component in module_components:
-                        if component.id == imported_component_qfn:
+                    for module_component in module_components:
+                        if module_component.id == imported_component_qfn:
+                            local_name = alias if alias else imported_component
                             import_relation = ImportRelation(
                                 importer_id= source,
                                 importee_id= imported_component_qfn
                             )
                             imports.append(import_relation)
+                            import_mapper.put(source, local_name, imported_component_qfn)
                             break
         return imports
     
@@ -69,11 +77,11 @@ class RelationExtractor:
         parts = id.split(":")
         if len(parts) > 2:
             return ":".join(parts[:-2])
-        elif len(parts) < 0:
+        elif len(parts) <= 0:
             return None
         return "".join(parts)
     
-    def extract_calls(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper):
+    def extract_calls(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper, import_mapper:ImportMapper):
         calls = []
         call_comps = self.components["call"]
         
@@ -106,6 +114,19 @@ class RelationExtractor:
                     if found:
                         break
                     current = parent_mapper.getParent(current)
-        
+
+                # Check if call is made from imported components
+                if not found:
+                    file_name = x.file_name
+                    imports = import_mapper.get(file_name, callee_name)
+                    if imports:
+                        callee_id = imports[-1]
+                        call_relation = CallRelation(
+                            caller_id= caller_id,
+                            callee_id= callee_id,
+                            internal_call= False
+                        )
+                        calls.append(call_relation)
+                    
         return calls
                 

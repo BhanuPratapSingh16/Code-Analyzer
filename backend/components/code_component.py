@@ -30,6 +30,7 @@ class ImportComponent(BaseModel):
     alias: str | None = None
     
 class CallComponent(BaseModel):
+    file_name: str
     call_text: str
     callee_name: str | None = None
     caller_id: str

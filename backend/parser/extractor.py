@@ -291,6 +291,7 @@ class Extractor:
                 caller_id = self.__get_parent_id(call_node.parent, file_name, language, symbol_index)
                 
                 call_component = CallComponent(
+                    file_name= file_name,
                     call_text= self.__gettext(call_node),
                     callee_name= self.__gettext(callee_node) if callee_node else None,
                     caller_id= caller_id,
