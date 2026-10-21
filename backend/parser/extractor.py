@@ -2,6 +2,7 @@ from pathlib import Path
 from tree_sitter import Tree, Node, Query, QueryCursor, Language
 from components.code_component import ClassComponent, FunctionComponent, ImportComponent, CallComponent
 from utils.symbol_index import SymbolIndex
+from utils.parents_mapper import ParentMapper
 
 class Extractor:
     def __init__(self, root:Path):
@@ -103,7 +104,7 @@ class Extractor:
         id = self.__getid(node, node_name, file_name, language, symbol_index, isParent=True)
         return id
     
-    def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex):
+    def extract_functions(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex, parent_mapper:ParentMapper):
         function_comps = []
         
         file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
@@ -152,11 +153,12 @@ class Extractor:
                 start_line= func_node.start_point[0] + 1,
                 end_line= func_node.end_point[0] + 1
             )
+            parent_mapper.put(id, parent_id)
             function_comps.append(function_component)
         
         return function_comps
     
-    def extract_classes(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex):
+    def extract_classes(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex, parent_mapper:ParentMapper):
         class_comps = []
         
         file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
@@ -191,6 +193,7 @@ class Extractor:
                 start_line= class_node.start_point[0] + 1,
                 end_line= class_node.end_point[0] + 1,
             )
+            parent_mapper.put(id, parent_id)
             class_comps.append(class_component)
         
         return class_comps
@@ -255,7 +258,7 @@ class Extractor:
         
         return import_comps
     
-    def extract_calls(self, tree:Tree, lang:Language, language:str, path:Path):
+    def extract_calls(self, tree:Tree, lang:Language, language:str, path:Path, symbol_index:SymbolIndex):
         call_comps = []
         
         file_name = str(path.with_suffix("")).replace("\\", ".").removeprefix(str(self.root)+".")
@@ -285,12 +288,12 @@ class Extractor:
                     call_type = "ATTRIBUTE"
                 
                 # Get caller name
-                caller_name = self.__get_parent_name(call_node, file_name, language)
+                caller_id = self.__get_parent_id(call_node.parent, file_name, language, symbol_index)
                 
                 call_component = CallComponent(
                     call_text= self.__gettext(call_node),
                     callee_name= self.__gettext(callee_node) if callee_node else None,
-                    caller_name= caller_name,
+                    caller_id= caller_id,
                     receiver_name= self.__gettext(receiver_node) if receiver_node else None,
                     method_name= self.__gettext(method_node) if method_node else None,
                     call_type= call_type

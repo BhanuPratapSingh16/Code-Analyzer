@@ -2,6 +2,8 @@ from pathlib import Path
 from tree_sitter_language_pack import get_parser, get_language
 from parser.extractor import Extractor
 from components.code_component import ModuleComponent
+from utils.symbol_index import SymbolIndex
+from utils.parents_mapper import ParentMapper
 
 class Parser:
     def __init__(self, root:Path):
@@ -27,7 +29,7 @@ class Parser:
         
         self.extractor = Extractor(root)
         
-    def parse(self, symbol_index):
+    def parse(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper):
         # Parse all the files recursively
         for path in self.root.rglob("*"):
             if not path.is_file():
@@ -50,16 +52,16 @@ class Parser:
             tree = parser.parse(source_code)
             
             # Extract various components
-            function_comps = self.extractor.extract_functions(tree, lang, language, path, symbol_index)
+            function_comps = self.extractor.extract_functions(tree, lang, language, path, symbol_index, parent_mapper)
             self.components["function"].extend(function_comps)
             
-            class_comps = self.extractor.extract_classes(tree, lang, language, path, symbol_index)
+            class_comps = self.extractor.extract_classes(tree, lang, language, path, symbol_index, parent_mapper)
             self.components["class"].extend(class_comps)
             
             import_comps = self.extractor.extract_imports(tree, lang, language, path)
             self.components["import"].extend(import_comps)
             
-            call_comps = self.extractor.extract_calls(tree, lang, language, path)
+            call_comps = self.extractor.extract_calls(tree, lang, language, path, symbol_index)
             self.components["call"].extend(call_comps)
             
             module_comp = ModuleComponent(

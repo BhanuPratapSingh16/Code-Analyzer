@@ -1,6 +1,7 @@
-from relation.relation_components import ContainsRelation, ImportRelation
+from relation.relation_components import ContainsRelation, ImportRelation, CallRelation
 from itertools import chain
 from utils.symbol_index import SymbolIndex
+from utils.parents_mapper import ParentMapper
 
 class RelationExtractor:
     def __init__(self, components):
@@ -63,3 +64,48 @@ class RelationExtractor:
                             imports.append(import_relation)
                             break
         return imports
+    
+    def __get_qfn(self, id:str):
+        parts = id.split(":")
+        if len(parts) > 2:
+            return ":".join(parts[:-2])
+        elif len(parts) < 0:
+            return None
+        return "".join(parts)
+    
+    def extract_calls(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper):
+        calls = []
+        call_comps = self.components["call"]
+        
+        for x in call_comps:
+            caller_id = x.caller_id
+            
+            call_type = x.call_type
+            if call_type == "PLAIN":
+                callee_name = x.callee_name
+                # Check for function with callee name recursively through caller and its parent
+                current = caller_id
+                while current:
+                    children = parent_mapper.getChildren(current)
+                    qfn = self.__get_qfn(current)
+                    possible_name = f"{qfn}:{callee_name}"
+                    
+                    found = False
+                    
+                    for child in reversed(children):
+                        child_qfn = self.__get_qfn(child)
+                        if possible_name == child_qfn:
+                            call_relation = CallRelation(
+                                caller_id= caller_id,
+                                callee_id= child,
+                                internal_call= True
+                            )
+                            calls.append(call_relation)
+                            found = True
+                            break
+                    if found:
+                        break
+                    current = parent_mapper.getParent(current)
+        
+        return calls
+                

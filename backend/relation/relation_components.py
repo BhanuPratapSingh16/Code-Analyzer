@@ -7,3 +7,8 @@ class ContainsRelation(BaseModel):
 class ImportRelation(BaseModel):
     importer_id: str
     importee_id: str
+    
+class CallRelation(BaseModel):
+    callee_id: str
+    caller_id: str
+    internal_call: bool

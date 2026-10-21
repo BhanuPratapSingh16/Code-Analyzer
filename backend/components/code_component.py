@@ -32,7 +32,7 @@ class ImportComponent(BaseModel):
 class CallComponent(BaseModel):
     call_text: str
     callee_name: str | None = None
-    caller_name: str
+    caller_id: str
     receiver_name: str | None = None
     method_name: str | None = None
     call_type: str
