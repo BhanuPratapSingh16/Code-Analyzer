@@ -127,6 +127,30 @@ class RelationExtractor:
                             internal_call= False
                         )
                         calls.append(call_relation)
+            
+            elif call_type == "ATTRIBUTE":
+                receiver_name = x.receiver_name
+                method_name = x.method_name
+                file_name = x.file_name
+
+                # Check if call made from another module
+                imports = import_mapper.get(file_name, receiver_name)
+
+                if imports:
+                    module_id = imports[-1]
+                    children = parent_mapper.getChildren(module_id)
+                    for child in reversed(children):
+                        if self.__get_qfn(child) == f"{module_id}:{method_name}":
+                            call_relation = CallRelation(
+                                caller_id= caller_id,
+                                callee_id= child,
+                                internal_call= False
+                            )
+                            calls.append(call_relation)
+                            break
                     
+                
+                # Resolve object based calls
+                
         return calls
                 
