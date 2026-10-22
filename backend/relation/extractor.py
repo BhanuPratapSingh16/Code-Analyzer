@@ -134,6 +134,7 @@ class RelationExtractor:
                 file_name = x.file_name
 
                 # Check if call made from another module
+                found = False
                 imports = import_mapper.get(file_name, receiver_name)
 
                 if imports:
@@ -147,10 +148,34 @@ class RelationExtractor:
                                 internal_call= False
                             )
                             calls.append(call_relation)
+                            found = True
                             break
                     
+                if found:
+                    continue
                 
                 # Resolve object based calls
-                
+                # Includes -> self, instance based calls
+                if receiver_name == "self":
+                    # Get parent class
+                    current = caller_id
+                    flag = False
+                    while current and not flag:
+                        for comp in self.components["class"]:
+                            if comp.id == current:
+                                func_qfn = f"{self.__get_qfn(comp.id)}:{method_name}"
+                                callee_id = symbol_index.getIndices(func_qfn)
+                                if callee_id:
+                                    callee_id = callee_id[-1]
+                                    call_relation = CallRelation(
+                                        caller_id= caller_id,
+                                        callee_id= callee_id,
+                                        internal_call= True
+                                    )
+                                    calls.append(call_relation)
+                                    flag = True
+                                    break
+                        current = parent_mapper.getParent(current)
+        
         return calls
                 
