@@ -11,6 +11,8 @@ class Component(BaseModel):
 class ClassComponent(Component):
     start_line: int
     end_line: int
+    bases: list
+    file_name: str
     
 class FunctionComponent(Component):
     parameters: list

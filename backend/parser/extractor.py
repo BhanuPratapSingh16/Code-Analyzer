@@ -4,6 +4,7 @@ from components.code_component import ClassComponent, FunctionComponent, ImportC
 from utils.symbol_index import SymbolIndex
 from utils.parents_mapper import ParentMapper
 
+
 class Extractor:
     def __init__(self, root:Path):
         self.root = root
@@ -173,6 +174,7 @@ class Extractor:
             # Extract class name and code
             name_node = capture_dict["class_name"][0]
             class_node = capture_dict["class"][0]
+            bases_node = class_node.child_by_field_name("superclasses")
             
             if not name_node or not class_node:
                 continue
@@ -183,6 +185,13 @@ class Extractor:
             id = self.__getid(class_node, class_name, file_name, language, symbol_index)
             parent_id = self.__get_parent_id(class_node.parent, file_name, language, symbol_index)
             
+            # Get base/inherited classes
+            bases = []
+            if bases_node:
+                for base_node in bases_node.named_children:
+                    base_name = self.__gettext(base_node)
+                    bases.append(base_name)
+            
             # Create component
             class_component = ClassComponent(
                 name= class_name,
@@ -192,6 +201,8 @@ class Extractor:
                 file= path,
                 start_line= class_node.start_point[0] + 1,
                 end_line= class_node.end_point[0] + 1,
+                bases= bases,
+                file_name= file_name
             )
             parent_mapper.put(id, parent_id)
             class_comps.append(class_component)

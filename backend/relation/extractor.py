@@ -1,4 +1,4 @@
-from relation.relation_components import ContainsRelation, ImportRelation, CallRelation
+from relation.relation_components import ContainsRelation, ImportRelation, CallRelation, InheritRelation
 from itertools import chain
 from utils.symbol_index import SymbolIndex
 from utils.parents_mapper import ParentMapper
@@ -178,4 +178,24 @@ class RelationExtractor:
                         current = parent_mapper.getParent(current)
         
         return calls
-                
+    
+    def extract_inherits(self, symbol_index:SymbolIndex):
+        inherits = []
+        class_components = self.components["class"]
+        
+        for comp in class_components:
+            super_id = comp.id
+            bases = comp.bases
+            file_name = comp.file_name
+            for base in bases:
+                qfn = f"{file_name}:{base}"
+                ids = symbol_index.getIndices(qfn)
+                if ids:
+                    id = ids[-1]
+                    inherit_reln = InheritRelation(
+                        sub_id= id,
+                        super_id= super_id
+                    )
+                    inherits.append(inherit_reln)
+        
+        return inherits

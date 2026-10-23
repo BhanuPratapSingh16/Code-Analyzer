@@ -12,3 +12,7 @@ class CallRelation(BaseModel):
     callee_id: str
     caller_id: str
     internal_call: bool
+    
+class InheritRelation(BaseModel):
+    sub_id: str
+    super_id: str
