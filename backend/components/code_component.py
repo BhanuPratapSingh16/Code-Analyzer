@@ -11,11 +11,11 @@ class Component(BaseModel):
 class ClassComponent(Component):
     start_line: int
     end_line: int
-    bases: list
+    bases: list[str]
     file_name: str
     
 class FunctionComponent(Component):
-    parameters: list
+    parameters: list[str]
     return_type: str | None = None
     start_line: int
     end_line: int

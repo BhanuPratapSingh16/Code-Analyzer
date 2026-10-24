@@ -1,4 +1,4 @@
-from relation.relation_components import ContainsRelation, ImportRelation, CallRelation, InheritRelation
+from relation.relation_components import Relation
 from itertools import chain
 from utils.symbol_index import SymbolIndex
 from utils.parents_mapper import ParentMapper
@@ -7,6 +7,7 @@ from utils.imports_mapper import ImportMapper
 class RelationExtractor:
     def __init__(self, components):
         self.components = components
+        self.relations = []
     
     def extract_contains(self):
         contains = []
@@ -16,13 +17,14 @@ class RelationExtractor:
         for component in chain(class_comps, function_comps):
             id = component.id
             parent_id = component.parent_id
-            contains_relation = ContainsRelation(
-                parent_id= parent_id,
-                child_id= id
+            contains_relation = Relation(
+                source_id= parent_id,
+                target_id= id,
+                relation= "CONTAINS"
             )
             contains.append(contains_relation)
         
-        return contains
+        self.relations.extend(contains)
     
     def extract_imports(self, symbol_index:SymbolIndex, import_mapper:ImportMapper):
         imports = []
@@ -38,9 +40,10 @@ class RelationExtractor:
                 for module_component in module_components:
                     if module_component.id == import_target:
                         local_name = alias if alias else import_target
-                        import_relation = ImportRelation(
-                            importer_id= source,
-                            importee_id= import_target,
+                        import_relation = Relation(
+                            source_id= source,
+                            target_id= import_target,
+                            relation= "IMPORTS"
                         )
                         imports.append(import_relation)
                         import_mapper.put(source, local_name, import_target)
@@ -52,9 +55,10 @@ class RelationExtractor:
                 if ids:
                     for id in ids:
                         local_name = alias if alias else imported_component
-                        import_relation = ImportRelation(
-                            importer_id= source,
-                            importee_id= id,
+                        import_relation = Relation(
+                            source_id= source,
+                            target_id= id,
+                            relation= "IMPORTS"
                         )
                         imports.append(import_relation)
                         import_mapper.put(source, local_name, id)
@@ -64,14 +68,15 @@ class RelationExtractor:
                     for module_component in module_components:
                         if module_component.id == imported_component_qfn:
                             local_name = alias if alias else imported_component
-                            import_relation = ImportRelation(
-                                importer_id= source,
-                                importee_id= imported_component_qfn
+                            import_relation = Relation(
+                                source_id= source,
+                                target_id= imported_component_qfn,
+                                relation= "IMPORTS"
                             )
                             imports.append(import_relation)
                             import_mapper.put(source, local_name, imported_component_qfn)
                             break
-        return imports
+        self.relations.extend(imports)
     
     def __get_qfn(self, id:str):
         parts = id.split(":")
@@ -103,10 +108,10 @@ class RelationExtractor:
                     for child in reversed(children):
                         child_qfn = self.__get_qfn(child)
                         if possible_name == child_qfn:
-                            call_relation = CallRelation(
-                                caller_id= caller_id,
-                                callee_id= child,
-                                internal_call= True
+                            call_relation = Relation(
+                                source_id= caller_id,
+                                target_id= child,
+                                relation= "CALLS"
                             )
                             calls.append(call_relation)
                             found = True
@@ -121,10 +126,10 @@ class RelationExtractor:
                     imports = import_mapper.get(file_name, callee_name)
                     if imports:
                         callee_id = imports[-1]
-                        call_relation = CallRelation(
-                            caller_id= caller_id,
-                            callee_id= callee_id,
-                            internal_call= False
+                        call_relation = Relation(
+                            source_id= caller_id,
+                            target_id= callee_id,
+                            relation= "CALLS"
                         )
                         calls.append(call_relation)
             
@@ -142,10 +147,10 @@ class RelationExtractor:
                     children = parent_mapper.getChildren(module_id)
                     for child in reversed(children):
                         if self.__get_qfn(child) == f"{module_id}:{method_name}":
-                            call_relation = CallRelation(
-                                caller_id= caller_id,
-                                callee_id= child,
-                                internal_call= False
+                            call_relation = Relation(
+                                source_id= caller_id,
+                                target_id= child,
+                                relation= "CALLS"
                             )
                             calls.append(call_relation)
                             found = True
@@ -167,17 +172,18 @@ class RelationExtractor:
                                 callee_id = symbol_index.getIndices(func_qfn)
                                 if callee_id:
                                     callee_id = callee_id[-1]
-                                    call_relation = CallRelation(
-                                        caller_id= caller_id,
-                                        callee_id= callee_id,
-                                        internal_call= True
+                                    call_relation = Relation(
+                                        source_id= caller_id,
+                                        target_id= callee_id,
+                                        relation= "CALLS"
                                     )
                                     calls.append(call_relation)
                                     flag = True
                                     break
                         current = parent_mapper.getParent(current)
         
-        return calls
+        self.relations.extend(calls)
+
     
     def extract_inherits(self, symbol_index:SymbolIndex):
         inherits = []
@@ -192,10 +198,17 @@ class RelationExtractor:
                 ids = symbol_index.getIndices(qfn)
                 if ids:
                     id = ids[-1]
-                    inherit_reln = InheritRelation(
-                        sub_id= id,
-                        super_id= super_id
+                    inherit_reln = Relation(
+                        source_id= super_id,
+                        target_id= id,
+                        relation= "INHERITS"
                     )
                     inherits.append(inherit_reln)
         
-        return inherits
+        self.relations.extend(inherits)
+
+    def extract(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper, import_mapper:ImportMapper):
+        self.extract_contains()
+        self.extract_calls(symbol_index, parent_mapper, import_mapper)
+        self.extract_imports(symbol_index, import_mapper)
+        self.extract_inherits(symbol_index)
