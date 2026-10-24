@@ -34,7 +34,6 @@ class GraphBuilder:
             )
     
     def add_edges(self, relations:list):
-        print(len(relations))
         for reln in relations:
             self.add_relation(reln.source_id, reln.target_id, reln.relation)
     

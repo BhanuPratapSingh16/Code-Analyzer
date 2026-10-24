@@ -209,6 +209,6 @@ class RelationExtractor:
 
     def extract(self, symbol_index:SymbolIndex, parent_mapper:ParentMapper, import_mapper:ImportMapper):
         self.extract_contains()
-        self.extract_calls(symbol_index, parent_mapper, import_mapper)
         self.extract_imports(symbol_index, import_mapper)
+        self.extract_calls(symbol_index, parent_mapper, import_mapper)
         self.extract_inherits(symbol_index)

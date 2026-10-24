@@ -11,4 +11,4 @@ class ImportMapper:
         self.map[file_name][local_name].append(id)
     
     def get(self, file_name:str, local_name:str):
-        return self.map.get(file_name, {}).get(local_name, [])
+        return self.map.get(file_name, {}).get(local_name)
