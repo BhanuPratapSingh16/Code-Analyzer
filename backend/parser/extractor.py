@@ -148,6 +148,7 @@ class Extractor:
                 id= id,
                 code= self.__gettext(func_node),
                 file= path,
+                file_name= file_name,
                 parent_id= parent_id,
                 parameters= parameters,
                 return_type= return_type,

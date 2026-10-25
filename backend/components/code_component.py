@@ -7,12 +7,12 @@ class Component(BaseModel):
     code: str
     file: Path
     parent_id: str
+    file_name: str
 
 class ClassComponent(Component):
     start_line: int
     end_line: int
     bases: list[str]
-    file_name: str
     
 class FunctionComponent(Component):
     parameters: list[str]
