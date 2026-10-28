@@ -28,30 +28,20 @@ class GraphQuery:
         
         results = []
         
-        if direction == "out" or direction == "both":
+        if direction == "OUT":
             for _, target, _, data in self.graph.out_edges(id, keys=True, data=True):
                 edge_relation = data.get("relation", "RELATED_TO")
                 
                 if edge_relation == relation:
-                    results.append({
-                        "source": id,
-                        "target": target,
-                        "relation": edge_relation,
-                        "attributes": data
-                    })
+                    results.append(target)
             
         
-        if direction == "in" or direction == "both":
+        if direction == "IN":
             for source, _, _, data in self.graph.in_edges(id, keys=True, data=True):
                 edge_relation = data.get("relation", "RELATED_TO")
                 
                 if edge_relation == relation:
-                    results.append({
-                        "source": source,
-                        "target": id,
-                        "relation": edge_relation,
-                        "attributes": data
-                    })
+                    results.append(source)
         
         return results
     
@@ -73,9 +63,9 @@ class GraphQuery:
     def get_importers(self, id:str):
         return self.get_relationships(id, "IMPORTS", direction="in")
     
-    def get_parent_classes(self, id:str):
+    def get_base_classes(self, id:str):
         return self.get_relationships(id, "INHERITS", direction="out")
 
-    def get_child_classes(self, id:str):
+    def get_derived_classes(self, id:str):
         return self.get_relationships(id, "INHERITS", direction="in")
     

@@ -45,10 +45,7 @@ class CodeVectorStore:
             ids=ids,
             documents=documents,
             metadatas=metadatas,
-            embeddings=[
-                component_embeddings[component_id]
-                for component_id in ids
-            ]
+            embeddings=[component_embeddings[component_id] for component_id in ids]
         )
     
     def search(self, query:str, embedder:CodeEmbeddor, top_n=4):
@@ -57,7 +54,7 @@ class CodeVectorStore:
         results = self.collection.query(
             query_embeddings= [query_embedding.tolist()],
             n_results= top_n,
-            include= ["documents", "metadatas", "distances"]
+            include= ["documents", "metadatas"]
         )
         
         matches = []
@@ -67,7 +64,22 @@ class CodeVectorStore:
                 "id": component_id,
                 "document": results["documents"][0][i],
                 "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i],
             })
 
         return matches
+    
+    def get_by_id(self, ids:list):
+        if not ids:
+            return []
+        
+        res = self.collection.get(ids=ids, include=["documents", "metadatas"])
+        components = []
+        
+        for i, id in enumerate(res["ids"]):
+            components.append({
+                "id": id,
+                "document": res["documents"][i],
+                "metadata": res["metadata"][i],
+            })
+        
+        return components
