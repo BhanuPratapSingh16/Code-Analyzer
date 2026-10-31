@@ -31,7 +31,6 @@ class GraphQuery:
         if direction == "OUT":
             for _, target, _, data in self.graph.out_edges(id, keys=True, data=True):
                 edge_relation = data.get("relation", "RELATED_TO")
-                
                 if edge_relation == relation:
                     results.append(target)
             
@@ -42,30 +41,29 @@ class GraphQuery:
                 
                 if edge_relation == relation:
                     results.append(source)
-        
         return results
     
     def get_callees(self, id:str):
-        return self.get_relationships(id, "CALLS", direction="out")
+        return self.get_relationships(id, "CALLS", direction="OUT")
 
     def get_callers(self, id:str):
-        return self.get_relationships(id, "CALLS", direction="in")
+        return self.get_relationships(id, "CALLS", direction="IN")
 
     def get_children(self, id:str):
-        return self.get_relationships(id, "CONTAINS", direction="out")
+        return self.get_relationships(id, "CONTAINS", direction="OUT")
 
     def get_parent(self, id:str):
-        return self.get_relationships(id, "CONTAINS", direction="in")
+        return self.get_relationships(id, "CONTAINS", direction="IN")
 
     def get_importees(self, id:str):
-        return self.get_relationships(id, "IMPORTS", direction="out")
+        return self.get_relationships(id, "IMPORTS", direction="OUT")
 
     def get_importers(self, id:str):
-        return self.get_relationships(id, "IMPORTS", direction="in")
+        return self.get_relationships(id, "IMPORTS", direction="IN")
     
     def get_base_classes(self, id:str):
-        return self.get_relationships(id, "INHERITS", direction="out")
+        return self.get_relationships(id, "INHERITS", direction="OUT")
 
     def get_derived_classes(self, id:str):
-        return self.get_relationships(id, "INHERITS", direction="in")
+        return self.get_relationships(id, "INHERITS", direction="IN")
     

@@ -2,7 +2,11 @@ from pydantic import BaseModel
 
 class RetrievedComponent(BaseModel):
     id: str
-    code: str
+    document: str
+    metadata: dict
+
+class RetrievedModule(BaseModel):
+    id: str
     metadata: dict
 
 class RetrievedRelationship(BaseModel):
@@ -14,3 +18,4 @@ class RetrievalSchema(BaseModel):
     query:str
     components: list[RetrievedComponent]
     relations: list[RetrievedRelationship]
+    modules: list[RetrievedModule] | None = None

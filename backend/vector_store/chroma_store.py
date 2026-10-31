@@ -8,7 +8,7 @@ class CodeVectorStore:
         self.client = chromadb.PersistentClient(path=persist_dir)
         
         self.collection = self.client.get_or_create_collection(name=collection_name)
-        
+    
     def add_components(self, components, texts, embeddings):
         ids = []
         metadatas = []
@@ -71,7 +71,7 @@ class CodeVectorStore:
     def get_by_id(self, ids:list):
         if not ids:
             return []
-        
+
         res = self.collection.get(ids=ids, include=["documents", "metadatas"])
         components = []
         
@@ -79,7 +79,7 @@ class CodeVectorStore:
             components.append({
                 "id": id,
                 "document": res["documents"][i],
-                "metadata": res["metadata"][i],
+                "metadata": res["metadatas"][i],
             })
         
         return components
