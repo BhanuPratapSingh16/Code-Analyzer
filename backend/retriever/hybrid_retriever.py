@@ -55,14 +55,18 @@ class HybridRetriever:
         vector_components_ids = [x["id"] for x in vector_components]
         
         retrieved_components = []
+        retrieved_ids = []
         for x in chain(search_results, vector_components):
-            retrieved_components.append(
-                RetrievedComponent(
-                    id= x["id"],
-                    document= x["document"],
-                    metadata= x["metadata"],
+            id = x["id"]
+            if id not in retrieved_ids:
+                retrieved_components.append(
+                    RetrievedComponent(
+                        id= id,
+                        document= x["document"],
+                        metadata= x["metadata"],
+                    )
                 )
-            )
+                retrieved_ids.append(id)
         
         # Get module metadata
         module_ids = list(set(related_components_ids) - set(vector_components_ids))

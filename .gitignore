@@ -4,7 +4,7 @@
 # Virtual Environment
 venv/
 
-main.py
+backend/main.py
 data/
 
 __pycache__
@@ -13,3 +13,5 @@ __pycache__
 lib/
 
 chroma_db/
+
+frontend
