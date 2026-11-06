@@ -2,7 +2,7 @@
 .env
 
 # Virtual Environment
-venv/
+.venv/
 
 backend/main.py
 data/
