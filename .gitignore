@@ -15,5 +15,8 @@ lib/
 chroma_db/
 
 frontend
+backend
 
 storage/
+
+.vscode
