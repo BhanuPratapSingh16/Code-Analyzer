@@ -4,7 +4,8 @@
 # Virtual Environment
 .venv/
 
-backend/main.py
+# Sample files used in development
+rag-engine/main.py
 data/
 
 __pycache__
