@@ -15,9 +15,11 @@ from llm.ollama_client import OllamaClient
 from llm.relation_selector import RelationSelector
 
 class RagPipeline:
-    def __init__(self):
+    def __init__(self, repo_path:str):
+        self.repo_path = repo_path
+        
         # Parse source code
-        self.parser = Parser(Path("data/"))
+        self.parser = Parser(Path(self.repo_path))
 
         self.symbol_index = SymbolIndex()
         self.parent_mapper = ParentMapper()

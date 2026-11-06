@@ -1,17 +1,23 @@
 import json
-
-from fastapi import FastAPI, HTTPException
+import shutil
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
-
 from api.rag_pipeline import RagPipeline
+from api.repo_manager import RepositoryManager
+from pathlib import Path
+import uuid
+from config import MAX_UPLOAD_SIZE, CHUNK_SIZE
+
+pipelines = {}
+repository_manager = RepositoryManager()
 
 # Initialize RAG pipeline
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.rag = RagPipeline()
+    app.state.pipelines = pipelines
     yield
 
 app = FastAPI(lifespan= lifespan)
@@ -25,16 +31,83 @@ app.add_middleware(
 )
 
 class ChatRequest(BaseModel):
+    repository_id: str
     question: str
     
-@app.post("/chat/stream")
-def chat(request: ChatRequest):
-    question = request.question.strip()
     
+
+async def save_upload(file: UploadFile, destination: Path):
+    total_size = 0
+    
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        with destination.open("wb") as output:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                
+                if not chunk:
+                    break
+                
+                total_size += len(chunk)
+                
+                if total_size > MAX_UPLOAD_SIZE:
+                    raise ValueError("Upload exceeds 100 MB limit")
+                
+                output.write(chunk)
+            
+        return destination
+    
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+
+    finally:
+        await file.close()
+
+
+@app.post("/repositories/upload")
+async def upload_repository(file:UploadFile = File(...)):
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Please upload a ZIP repository")
+    
+    temp_path = Path("storage/temp") / f"{str(uuid.uuid4())}.zip"
+    temp_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        await save_upload(file, temp_path)
+
+        repository_id, storage_path = repository_manager.save(temp_path)
+        
+        rag = RagPipeline(repo_path=storage_path)
+        
+        app.state.pipelines[repository_id] = rag
+        
+        return {
+            "repository_id": repository_id,
+            "storage_path": storage_path,
+        }
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Repository upload failed"
+        )
+        
+    finally:
+        file.file.close()
+        temp_path.unlink(missing_ok=True)
+    
+@app.post("/chat/stream")
+def chat(request: ChatRequest, req: Request):
+    rag = req.app.state.pipelines.get(request.repository_id)
+    
+    question = request.question.strip()
+    if not rag:
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+        
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty")
     
-    rag = app.state.rag
     try:
         result = rag.retrieve(question)
         prompt = rag.build_prompt(result)

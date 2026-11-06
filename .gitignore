@@ -15,3 +15,5 @@ lib/
 chroma_db/
 
 frontend
+
+storage/

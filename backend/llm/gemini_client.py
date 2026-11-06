@@ -8,7 +8,6 @@ class GeminiClient:
         self.model = GEMINI_MODEL
     
     def generate(self, prompt:str):
-        print("Generating response")
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt,
@@ -22,6 +21,7 @@ class GeminiClient:
         return response.text
     
     def stream_answer(self, prompt:str):
+        print("Generating answer")
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt,
@@ -32,8 +32,7 @@ class GeminiClient:
                 )
             ),
         )
-        print("CHUNK TYPE:", type(chunk))
-        print("CHUNK VALUE:", chunk)
+        
         for chunk in response:
             if chunk.text:
                 yield chunk.text
