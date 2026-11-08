@@ -1,14 +1,17 @@
 package com.codegraph.backend.auth.controller;
 
-import com.codegraph.backend.auth.dto.AuthResponse;
-import com.codegraph.backend.auth.dto.LoginRequest;
-import com.codegraph.backend.auth.dto.RegisterRequest;
+import com.codegraph.backend.auth.dto.*;
 import com.codegraph.backend.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,17 +25,38 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegisterRequest request){
+    public ResponseEntity<RegisterResponse> registerUser(@Valid @RequestBody RegisterRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(request));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AuthResponse> getUserById(@PathVariable String id){
-        return ResponseEntity.status(HttpStatus.OK).body(authService.getUserById(id));
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response){
+        AuthResponse authResponse = authService.loginUser(request);
+
+        ResponseCookie refreshCookie = ResponseCookie.from(
+                "refreshToken",
+                authResponse.getRefreshToken()
+        )
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/auth")
+                .maxAge(Duration.ofDays(7))
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        return ResponseEntity.ok(
+                LoginResponse.builder()
+                        .id(authResponse.getId())
+                        .username(authResponse.getUsername())
+                        .email(authResponse.getEmail())
+                        .accessToken(authResponse.getAccessToken())
+                        .build()
+        );
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request){
-        return ResponseEntity.status(HttpStatus.OK).body(authService.loginUser(request));
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponse> refresh(@CookieValue("refreshToken") String refreshToken){
+        return ResponseEntity.ok(authService.refreshResponse(refreshToken));
     }
 }

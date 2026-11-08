@@ -1,13 +1,14 @@
 package com.codegraph.backend.auth.dto;
 
-
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
+@Builder
 public class AuthResponse {
     private String id;
     private String username;
     private String email;
+    private String accessToken;
+    private String refreshToken;
 }
