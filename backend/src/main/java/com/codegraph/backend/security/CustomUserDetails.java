@@ -7,13 +7,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.UUID;
 
 public class CustomUserDetails implements UserDetails {
 
     private String username;
     private String email;
     private String password;
-    private String id;
+    private UUID id;
 
     public CustomUserDetails(User user){
         this.username = user.getUsername();
@@ -41,7 +42,7 @@ public class CustomUserDetails implements UserDetails {
         return email;
     }
 
-    public String getId(){
+    public UUID getId(){
         return id;
     }
 }
