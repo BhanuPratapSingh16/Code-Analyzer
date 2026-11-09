@@ -45,11 +45,6 @@ public class AuthService {
         return new RegisterResponse(savedUser.getId(), savedUser.getUsername(), savedUser.getEmail());
     }
 
-    public RegisterResponse getUserById(String id){
-        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        return new RegisterResponse(user.getId(), user.getUsername(), user.getEmail());
-    }
-
     public AuthResponse loginUser(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())

@@ -1,8 +1,9 @@
 package com.codegraph.backend.repo.dto;
 
 
-public enum RepositoryStatus {
+public enum RepoStatus {
     UPLOADED,
+    INDEXING,
     READY,
     FAILED
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -39,7 +40,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("type", "refresh")
-                .claim("id", userDetails.getId())
+                .claim("id", userDetails.getId().toString())
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + 7 * 24 * 60 * 60 * 1000L))
                 .signWith(secretKey)
