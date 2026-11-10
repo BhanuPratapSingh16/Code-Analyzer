@@ -35,4 +35,10 @@ public class RepoController {
         UUID userId = userDetails.getId();
         return ResponseEntity.status(HttpStatus.OK).body(repoService.getAllByUser(userId));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<RepoResponse> getById(@PathVariable UUID id, @AuthenticationPrincipal CustomUserDetails userDetails){
+        UUID userId = userDetails.getId();
+        return ResponseEntity.status(HttpStatus.OK).body(repoService.getById(id, userId));
+    }
 }

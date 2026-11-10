@@ -12,6 +12,4 @@ public interface RepoRepository extends JpaRepository<Repo, UUID> {
     List<Repo> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Optional<Repo> findByIdAndUserId(UUID id, UUID userId);
-
-    UUID user(User user);
 }

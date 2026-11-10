@@ -30,6 +30,13 @@ app.add_middleware(
     allow_headers= ["*"]
 )
 
+@app.get("/api/rag/connection")
+def health_check():
+    return {
+        "status": "UP",
+        "service": "CodeGraph RAG Engine"
+    }
+
 class ChatRequest(BaseModel):
     repository_id: str
     question: str

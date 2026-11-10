@@ -69,4 +69,16 @@ public class RepoService {
 
         return reposResponse;
     }
+
+    public RepoResponse getById(UUID id, UUID userId){
+        Repo repo = repoRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new IllegalArgumentException("Invalid repository or unauthorized user"));
+        return RepoResponse
+            .builder()
+            .id(repo.getId())
+            .name(repo.getName())
+            .status(repo.getStatus())
+            .createdAt(repo.getCreatedAt())
+            .userId(repo.getUser().getId())
+            .build();
+    }
 }
