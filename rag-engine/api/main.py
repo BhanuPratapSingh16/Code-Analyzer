@@ -40,8 +40,7 @@ def health_check():
 class ChatRequest(BaseModel):
     repository_id: str
     question: str
-    
-    
+   
 
 async def save_upload(file: UploadFile, destination: Path):
     total_size = 0
@@ -73,8 +72,8 @@ async def save_upload(file: UploadFile, destination: Path):
         await file.close()
 
 
-@app.post("/repositories/upload")
-async def upload_repository(file:UploadFile = File(...)):
+@app.post("/repositories/{repository_id}/upload")
+async def upload_repository(repository_id:uuid.UUID, file:UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(status_code=400, detail="Please upload a ZIP repository")
     
@@ -84,17 +83,19 @@ async def upload_repository(file:UploadFile = File(...)):
     try:
         await save_upload(file, temp_path)
 
-        repository_id, storage_path = repository_manager.save(temp_path)
+        _, storage_path = repository_manager.save(repository_id, temp_path)
         
         rag = RagPipeline(repo_path=storage_path)
         
-        app.state.pipelines[repository_id] = rag
+        app.state.pipelines[str(repository_id)] = rag
         
         return {
             "repository_id": repository_id,
-            "storage_path": storage_path,
+            "status": "READY",
+            "message": "Repository indexed successfully!"
         }
-    except Exception:
+    except Exception as exc:
+        print(exc)
         raise HTTPException(
             status_code=500,
             detail="Repository upload failed"

@@ -8,10 +8,8 @@ class RepositoryManager:
     def __init__(self):
         REPOSITORY_ROOT.mkdir(parents=True, exist_ok=True)
 
-    def save(self, zip_file:Path):
-        repository_id = str(uuid.uuid4())
-        
-        storage_path = (REPOSITORY_ROOT / repository_id).resolve()
+    def save(self, repository_id:uuid.UUID, zip_file:Path):
+        storage_path = (REPOSITORY_ROOT / str(repository_id)).resolve()
         if not storage_path.is_relative_to(REPOSITORY_ROOT):
             raise ValueError("Invalid repository storage path")
         

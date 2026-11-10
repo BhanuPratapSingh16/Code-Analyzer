@@ -8,7 +8,6 @@ import com.codegraph.backend.repo.repository.RepoRepository;
 import com.codegraph.backend.user.model.User;
 import com.codegraph.backend.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -70,15 +69,24 @@ public class RepoService {
         return reposResponse;
     }
 
-    public RepoResponse getById(UUID id, UUID userId){
+    public Repo getRepoById(UUID id, UUID userId){
+        System.out.println(id+" "+userId);
+        return repoRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new IllegalArgumentException("Invalid repository or unauthorized user"));
+    }
+
+    public RepoResponse getRepoResponseById(UUID id, UUID userId){
         Repo repo = repoRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new IllegalArgumentException("Invalid repository or unauthorized user"));
         return RepoResponse
-            .builder()
-            .id(repo.getId())
-            .name(repo.getName())
-            .status(repo.getStatus())
-            .createdAt(repo.getCreatedAt())
-            .userId(repo.getUser().getId())
-            .build();
+                .builder()
+                .id(repo.getId())
+                .name(repo.getName())
+                .status(repo.getStatus())
+                .createdAt(repo.getCreatedAt())
+                .userId(repo.getUser().getId())
+                .build();
+    }
+
+    public Repo save(Repo repo) {
+        return repoRepository.save(repo);
     }
 }
