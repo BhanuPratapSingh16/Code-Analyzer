@@ -2,7 +2,6 @@ package com.codegraph.backend.fastapi.controller;
 
 import com.codegraph.backend.fastapi.dto.FastApiResponse;
 import com.codegraph.backend.fastapi.service.FastApiService;
-import com.codegraph.backend.repo.dto.RepoResponse;
 import com.codegraph.backend.repo.dto.RepoStatus;
 import com.codegraph.backend.repo.model.Repo;
 import com.codegraph.backend.repo.service.RepoService;

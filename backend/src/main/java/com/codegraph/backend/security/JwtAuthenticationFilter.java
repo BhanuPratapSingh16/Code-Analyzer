@@ -2,6 +2,7 @@ package com.codegraph.backend.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,14 +30,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String header = request.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ")) {
+        String token = getTokenFromRequest(request);
+        if(token == null){
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = header.substring(7);
 
         try{
             String username = jwtService.extractUsername(token);
@@ -54,5 +53,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String getTokenFromRequest(HttpServletRequest request){
+        if(request.getCookies() == null){
+            return null;
+        }
+        for(Cookie cookie: request.getCookies()){
+            if("accessToken".equals(cookie.getName())){
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 }

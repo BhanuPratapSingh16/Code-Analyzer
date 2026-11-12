@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import "./AuthPage.css"
 const AuthPage = ({ onLogin, onSignup }) => {
 
+    const [loading, setLoading] = useState(false);
+    const [apiError, setApiError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("")
+
     const [isLogin, setIsLogin] = useState(false);
     const [authForm, setAuthForm] = useState({
         username: "",
@@ -20,27 +24,48 @@ const AuthPage = ({ onLogin, onSignup }) => {
         if (passwordError) setPasswordError("")
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        setPasswordError("");
+        setApiError("");
+        setSuccessMessage("");
 
         if (!isLogin && authForm.password !== authForm.confirmPassword) {
             setPasswordError("Passwords do not match!")
             return;
         }
+        try {
+            setLoading(true);
 
-        if (isLogin) {
-            onLogin?.({
-                username: authForm.username,
-                password: authForm.password
-            })
+            if (isLogin) {
+                await onLogin({
+                    username: authForm.username,
+                    password: authForm.password
+                })
+            }
+            else {
+                await onSignup({
+                    username: authForm.username,
+                    email: authForm.email,
+                    password: authForm.password
+                })
+                setSuccessMessage("Account created successfully! Now you can log in")
+                setIsLogin(true);
+
+                setForm({
+                    name: "",
+                    email: "",
+                    password: "",
+                    confirmPassword: "",
+                });
+            }
         }
-        else {
-            onSignup?.({
-                username: authForm.username,
-                email: authForm.email,
-                password: authForm.password
-            })
+        catch (error) {
+            const message = error.response?.data?.message || error.response?.data?.detail || "Try again, something went wrong!"
+            setApiError(message);
         }
+        setLoading(false)
     }
 
     return (
@@ -88,6 +113,13 @@ const AuthPage = ({ onLogin, onSignup }) => {
                                     : "Start understanding your codebase with AI."}
                             </p>
                         </div>
+                        {apiError && (
+                            <p className="error-message">{apiError}</p>
+                        )}
+
+                        {successMessage && (
+                            <p className="success-message">{successMessage}</p>
+                        )}
                         <form onSubmit={handleSubmit}>
                             <div className='form-group'>
                                 <label>Full name</label>
@@ -115,9 +147,13 @@ const AuthPage = ({ onLogin, onSignup }) => {
                                     )}
                                 </>
                             )}
-                            <button className="submit-btn" type="submit">
-                                {isLogin ? "Sign In" : "Create Account"}
-                                <span>→</span>
+                            <button className="submit-btn" type="submit" disabled={loading}>
+                                {loading
+                                    ? "Please wait..."
+                                    : isLogin
+                                        ? "Sign In"
+                                        : "Create Account"}
+                                {!loading && <span>→</span>}
                             </button>
                         </form>
                         <p className="auth-switch">

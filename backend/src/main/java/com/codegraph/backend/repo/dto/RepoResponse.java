@@ -1,6 +1,5 @@
 package com.codegraph.backend.repo.dto;
 
-import com.codegraph.backend.user.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
