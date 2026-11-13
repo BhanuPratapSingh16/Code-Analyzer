@@ -1,6 +1,7 @@
 package com.codegraph.backend.auth.service;
 
 import com.codegraph.backend.auth.dto.*;
+import com.codegraph.backend.exception.DuplicateResourceException;
 import com.codegraph.backend.security.CustomUserDetails;
 import com.codegraph.backend.security.CustomUserDetailsService;
 import com.codegraph.backend.security.JwtService;
@@ -33,10 +34,10 @@ public class AuthService {
 
     public RegisterResponse registerUser(RegisterRequest request){
         if(userRepository.existsByUsername(request.getUsername())){
-            throw new IllegalArgumentException("Username already exists!");
+            throw new DuplicateResourceException("Username already exists!");
         }
         if(userRepository.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("User with email already exists!");
+            throw new DuplicateResourceException("User with email already exists!");
         }
         User user = User.builder()
                 .username(request.getUsername())
