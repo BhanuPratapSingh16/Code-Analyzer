@@ -33,7 +33,10 @@ public class AuthService {
 
     public RegisterResponse registerUser(RegisterRequest request){
         if(userRepository.existsByUsername(request.getUsername())){
-            throw new IllegalArgumentException("Username already exists");
+            throw new IllegalArgumentException("Username already exists!");
+        }
+        if(userRepository.existsByEmail(request.getEmail())){
+            throw new IllegalArgumentException("User with email already exists!");
         }
         User user = User.builder()
                 .username(request.getUsername())
