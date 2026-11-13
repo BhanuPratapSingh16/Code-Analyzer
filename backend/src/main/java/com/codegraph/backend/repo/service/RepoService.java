@@ -70,7 +70,6 @@ public class RepoService {
     }
 
     public Repo getRepoById(UUID id, UUID userId){
-        System.out.println(id+" "+userId);
         return repoRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new IllegalArgumentException("Invalid repository or unauthorized user"));
     }
 

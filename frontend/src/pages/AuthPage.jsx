@@ -1,6 +1,15 @@
 import React, { useState } from 'react'
 import "./AuthPage.css"
-const AuthPage = ({ onLogin, onSignup }) => {
+import { useAuth } from '../context/AuthContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+const AuthPage = () => {
+    const {login, signup} = useAuth();
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from?.pathname || "/dashboard";
 
     const [loading, setLoading] = useState(false);
     const [apiError, setApiError] = useState("");
@@ -39,30 +48,31 @@ const AuthPage = ({ onLogin, onSignup }) => {
             setLoading(true);
 
             if (isLogin) {
-                await onLogin({
+                await login({
                     username: authForm.username,
                     password: authForm.password
                 })
+                navigate(from, {replace:true})
             }
             else {
-                await onSignup({
+                await signup({
                     username: authForm.username,
                     email: authForm.email,
                     password: authForm.password
                 })
                 setSuccessMessage("Account created successfully! Now you can log in")
                 setIsLogin(true);
-
-                setForm({
-                    name: "",
+                
+                setAuthForm((prevForm) => ({
+                    ...prevForm,
                     email: "",
-                    password: "",
-                    confirmPassword: "",
-                });
+                    confirmPassword: ""
+                }));
             }
         }
         catch (error) {
             const message = error.response?.data?.message || error.response?.data?.detail || "Try again, something went wrong!"
+            console.error(error);
             setApiError(message);
         }
         setLoading(false)
@@ -117,12 +127,12 @@ const AuthPage = ({ onLogin, onSignup }) => {
                             <p className="error-message">{apiError}</p>
                         )}
 
-                        {successMessage && (
+                        {successMessage && isLogin && (
                             <p className="success-message">{successMessage}</p>
                         )}
                         <form onSubmit={handleSubmit}>
                             <div className='form-group'>
-                                <label>Full name</label>
+                                <label>Username</label>
                                 <input name="username" type="text" value={authForm.username} onChange={handleChange} required />
                             </div>
 

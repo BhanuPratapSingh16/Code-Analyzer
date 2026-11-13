@@ -2,6 +2,7 @@ package com.codegraph.backend.auth.controller;
 
 import com.codegraph.backend.auth.dto.*;
 import com.codegraph.backend.auth.service.AuthService;
+import com.codegraph.backend.security.CustomUserDetails;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -85,5 +87,14 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<RefreshResponse> refresh(@CookieValue("refreshToken") String refreshToken){
         return ResponseEntity.ok(authService.refreshResponse(refreshToken));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Not authenticated"));
+        }
+
+        return ResponseEntity.ok(Map.of("username", userDetails.getUsername()));
     }
 }
