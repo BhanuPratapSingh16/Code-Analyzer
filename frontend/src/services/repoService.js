@@ -1,8 +1,8 @@
 import api from "./api";
 
 
-export const createRepo = async () => {
-    const response = await api.post("/repos/create")
+export const createRepo = async (data) => {
+    const response = await api.post("/repos/create", data)
     return response.data;
 }
 

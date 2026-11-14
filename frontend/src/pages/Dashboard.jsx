@@ -86,42 +86,44 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <div className="repos-grid">
-                        {repos.slice(0, 6).map((repo) => {
-                            <article className="repo-card" key={repo.id}
+                        {repos.slice(0, 6).map((repo) => (
+                            <article
+                                className="repo-card"
+                                key={repo.id}
                                 onClick={() => navigate(`/repos/${repo.id}`)}
                                 role="button"
                                 tabIndex={0}
                             >
-
                                 <div className="repo-card-top">
                                     <div className="repo-icon">{"</>"}</div>
                                 </div>
+
                                 <h3>{repo.name}</h3>
+
                                 <div className="repo-card-footer">
                                     <span className="repo-arrow">↗</span>
                                 </div>
                             </article>
-                        })}
+                        ))}
                     </div>
                 )
                 }
             </section>
             <section className="quick-start">
-            <div className="quick-start-icon">✦</div>
-            <div>
-            <h3>Ready to understand your codebase?</h3>
-            <p>
-                Create a repo, upload your ZIP file, and let CodeGraph AI
-                explore your code structure.
-            </p>
-            </div>
-            <button
-            className="secondary-button"
-            onClick={() => navigate("/repos/new")}
-            >
-            Get started →
-            </button>
-        </section>
+                <div className="quick-start-icon">✦</div>
+                <div>
+                    <h3>Ready to understand your codebase?</h3>
+                    <p>
+                        Create a repo, upload your ZIP file, and let CodeGraph AI explore your code structure.
+                    </p>
+                </div>
+                <button
+                    className="secondary-button"
+                    onClick={() => navigate("/repos/new")}
+                >
+                    Get started →
+                </button>
+            </section>
         </DashboardLayout>
     )
 }

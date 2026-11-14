@@ -1,0 +1,235 @@
+.create-repo-page {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px 0 40px;
+    color: #f1f1f5;
+}
+
+.back-button {
+    background: transparent;
+    border: none;
+    color: #a1a1b5;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 35px;
+    transition: color 0.2s ease;
+}
+
+.back-button:hover {
+    color: #ffffff;
+}
+
+.create-repo-heading {
+    margin-bottom: 30px;
+}
+
+.create-repo-eyebrow {
+    color: #a78bfa;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+}
+
+.create-repo-heading h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 10px;
+}
+
+.create-repo-heading > p:last-child {
+    color: #9292a5;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.create-repo-card {
+    background: #171720;
+    border: 1px solid #292938;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 650px;
+}
+
+.create-repo-icon {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.13);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 10px;
+    font-size: 18px;
+    margin-bottom: 22px;
+}
+
+.create-repo-card h2 {
+    font-size: 19px;
+    margin: 0 0 8px;
+}
+
+.create-repo-card-description {
+    color: #9292a5;
+    font-size: 13px;
+    margin-bottom: 28px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    color: #e4e4eb;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.form-group label span {
+    color: #f87171;
+}
+
+.form-group label .optional {
+    color: #77778b;
+    font-weight: 400;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #101018;
+    border: 1px solid #303044;
+    border-radius: 7px;
+    padding: 13px 14px;
+    color: #f1f1f5;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #8b5cf6;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #626276;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 110px;
+}
+
+.form-group small {
+    color: #77778b;
+    font-size: 11px;
+    margin-top: 8px;
+}
+
+.create-repo-error {
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    color: #fca5a5;
+    padding: 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.create-repo-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.cancel-button,
+.create-repo-actions .primary-button {
+    padding: 11px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.cancel-button {
+    background: transparent;
+    color: #b0b0c0;
+    border: 1px solid #343447;
+}
+
+.cancel-button:hover {
+    background: #22222e;
+    color: #ffffff;
+}
+
+.create-repo-actions .primary-button {
+    background: #7c3aed;
+    color: #ffffff;
+    border: 1px solid #7c3aed;
+}
+
+.create-repo-actions .primary-button:hover:not(:disabled) {
+    background: #6d28d9;
+}
+
+.create-repo-actions button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.create-repo-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 650px;
+    margin-top: 22px;
+    padding: 16px;
+    background: #171720;
+    border: 1px solid #292938;
+    border-radius: 9px;
+}
+
+.create-repo-hint span {
+    color: #a78bfa;
+    font-size: 17px;
+}
+
+.create-repo-hint p {
+    color: #9292a5;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .create-repo-page {
+        padding: 5px 0 30px;
+    }
+
+    .create-repo-heading h1 {
+        font-size: 24px;
+    }
+
+    .create-repo-card {
+        padding: 20px;
+    }
+
+    .create-repo-actions {
+        flex-direction: column-reverse;
+    }
+
+    .create-repo-actions button {
+        width: 100%;
+    }
+}
