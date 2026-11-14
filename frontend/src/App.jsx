@@ -1,9 +1,9 @@
 import "./App.css";
 import AuthPage from "./pages/AuthPage";
 import { BrowserRouter, Routes, Route, useNavigate, data } from "react-router-dom";
-import Navbar from "./components/Navbar";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
 
@@ -14,9 +14,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard"
               element={
-                <>
-                  Welcome!
-                </>
+                <Dashboard/>
               }
             />
           </Route>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import "./AuthPage.css"
+import "../styles/AuthPage.css"
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 
